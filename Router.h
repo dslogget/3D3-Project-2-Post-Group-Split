@@ -86,6 +86,8 @@ class Router
 
         //Todo: Daniel - Add debug commands
 
+        void printRoutingTable();
+
 
     private:
         /** @brief where the unresolved domain of the router is stored **/
@@ -124,6 +126,13 @@ class Router
             uint16_t port_direct = 0;
         };
 
+        struct Timeout{
+            std::time_t lastHeardFrom;
+            uint8_t id;
+        };
+
+
+
 
         /**
          *  @brief  The function to handle the incoming data packets
@@ -133,6 +142,8 @@ class Router
          *
          **/
         void handleSocket();//James
+
+        void handleTimeouts();
 
         /**
          *  @brief  The function to handle updates to the distance vector/routing table
@@ -161,6 +172,8 @@ class Router
 
         /** @brief a vector containing routing entries **/
         std::vector<struct RoutingEntry> routingTable;
+
+        std::vector<struct Timeout> timeouts;
 
 
 };
