@@ -5,6 +5,7 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <ctime>
 //For delays apparently std::this_thread::sleep_for(std::chrono::milliseconds(x)); should work
 
 /**
@@ -85,6 +86,8 @@ class Router
 
         //Todo: Daniel - Add debug commands
 
+        void printRoutingTable();
+
 
     private:
         /** @brief where the unresolved domain of the router is stored **/
@@ -113,11 +116,22 @@ class Router
             uint8_t cost = 0;
 
             /** @brief the port the route leave the router on **/
-            uint16_t port_out = 0;
+            uint8_t via = 0;
 
             /** @brief the port the next hop router is receiving on **/
             uint16_t port_dest = 0;
+
+            uint8_t directCost = 0xF0;
+
+            uint16_t port_direct = 0;
         };
+
+        struct Timeout{
+            std::time_t lastHeardFrom;
+            uint8_t id;
+        };
+
+
 
 
         /**
@@ -128,6 +142,8 @@ class Router
          *
          **/
         void handleSocket();//James
+
+        void handleTimeouts();
 
         /**
          *  @brief  The function to handle updates to the distance vector/routing table
@@ -153,12 +169,11 @@ class Router
         **/
         void forwardDataPacket(std::vector<uint8_t>& data);//James
 
-        /** @brief a vector containing destination, cost pairs **/
-        std::vector<struct DestCost> distanceVectorTable;
-
 
         /** @brief a vector containing routing entries **/
         std::vector<struct RoutingEntry> routingTable;
+
+        std::vector<struct Timeout> timeouts;
 
 
 };
