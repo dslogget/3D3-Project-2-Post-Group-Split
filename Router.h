@@ -76,19 +76,15 @@ class Router
          *
          *  @param  initpath - the path for the initialisation of the distance vector/routing table
          **/
-        Router(std::string domain, uint8_t id, std::string initpath);//Raghav
+        Router(std::string domain, uint8_t id, std::string initpath);//Daniel
 
         /**
          *  @brief  Destructor for the class
          **/
-        ~Router();//Raghav
+        ~Router();//Daniel
 
         //Todo: Daniel - Add debug commands
 
-
-        /**
-         *  @brief a mutex to control the usage of the IO to prevent data-racing and odd outputs
-         **/
 
     private:
         /** @brief where the unresolved domain of the router is stored **/
@@ -107,23 +103,18 @@ class Router
 
 
         /**
-         *  @brief a struct that contains the destination and cost of a distance vector
-         **/
-        struct DestCost{
-            uint8_t dest = 0;
-            uint8_t cost = 0;
-        };
-
-        /**
          *  @brief a struct that contains a single routing entry
          **/
         struct RoutingEntry{
             /** @brief The final destination of the route **/
             uint8_t destination = 0;
+
             /** @brief the total cost of the route **/
             uint8_t cost = 0;
+
             /** @brief the port the route leave the router on **/
             uint16_t port_out = 0;
+
             /** @brief the port the next hop router is receiving on **/
             uint16_t port_dest = 0;
         };
@@ -136,7 +127,7 @@ class Router
          *  update for the distance vector/routing table
          *
          **/
-        void handleSocket();//James (Daniel for timeouts)
+        void handleSocket();//James
 
         /**
          *  @brief  The function to handle updates to the distance vector/routing table
@@ -147,7 +138,7 @@ class Router
          *  @param  data - This is the raw data vector received in from the socket.
          *          It is not stored anywhere, so can be modified if needed
          **/
-        void updateDistanceVector(std::vector<uint8_t>& data);//Shikhar & Daniel
+        void updateDistanceVector(std::vector<uint8_t>& data);//Daniel
 
         /**
          *  @brief  The function to push the distance vector to its neighbouring routers
@@ -155,7 +146,7 @@ class Router
          *  This function's main job is push the current distance vector to its neighbours. This function will be
          *  called periodically as needed (Brief states every 5 seconds)
          **/
-        void pushDistanceVector(); //Shikhar & Daniel
+        void pushDistanceVector(); //Daniel
 
         /**
         *   @brief  The function to forward a data packet along the correct routing path based on the routing table

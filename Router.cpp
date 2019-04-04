@@ -159,7 +159,6 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data)
 {
     //We need to update our distance vector
     //If a new router connects, we need to add it to our distance vector
-
     //an update will contain the origin router's ID, then each pair of destinations and costs, and be terminated by a null.
 }
 void Router::pushDistanceVector()
