@@ -5,6 +5,7 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <ctime>
 //For delays apparently std::this_thread::sleep_for(std::chrono::milliseconds(x)); should work
 
 /**
@@ -113,10 +114,14 @@ class Router
             uint8_t cost = 0;
 
             /** @brief the port the route leave the router on **/
-            uint16_t port_out = 0;
+            uint8_t via = 0;
 
             /** @brief the port the next hop router is receiving on **/
             uint16_t port_dest = 0;
+
+            uint8_t directCost = 0xF0;
+
+            uint16_t port_direct = 0;
         };
 
 
@@ -152,9 +157,6 @@ class Router
         *   @brief  The function to forward a data packet along the correct routing path based on the routing table
         **/
         void forwardDataPacket(std::vector<uint8_t>& data);//James
-
-        /** @brief a vector containing destination, cost pairs **/
-        std::vector<struct DestCost> distanceVectorTable;
 
 
         /** @brief a vector containing routing entries **/
