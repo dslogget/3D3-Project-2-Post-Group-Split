@@ -192,10 +192,10 @@ void Router::handleTimeouts(){
             std::cout << timeouts.at(i).id << " is dead" << std::endl;
             for(auto& entry : routingTable){
                 if(entry.destination == timeouts.at(i).id || entry.via == timeouts.at(i).id){
-                    entry.cost = 0xF0;
+                    entry.cost = infty;
                 }
                 if(entry.destination == timeouts.at(i).id){
-                    entry.directCost = 0xF0;
+                    entry.directCost = infty;
                 }
             }
             printRoutingTable();
@@ -261,7 +261,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data)
                 if(!routing){
                     RoutingEntry tmp;
                     tmp.destination = dataID;
-                    tmp.cost = 0xF0;
+                    tmp.cost = infty;
                     tmp.port_dest = *originPort;
                     tmp.via = originID;
                     routingTable.push_back(tmp);
@@ -286,10 +286,10 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data)
                     routing->port_dest = *originPort;
                     std::cout << "Improvement via " << routing->via << std::endl;
                     printRoutingTable();
-                }else if(dataCost + origin->cost > routing->cost){
+                }else if(dataCost + origin->cost > routing->cost && dataCost < infty){
                     if(routing->via == originID){
                         std::cout << "But wait, it gets worse!" << std::endl;
-                        routing->cost = dataCost + origin->cost;
+                        routing->cost = infty;
                         printRoutingTable();
                     }
 

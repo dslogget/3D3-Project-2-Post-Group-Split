@@ -8,6 +8,8 @@
 #include <ctime>
 //For delays apparently std::this_thread::sleep_for(std::chrono::milliseconds(x)); should work
 
+#define infty 20
+
 /**
  *  @brief  This class makes it easier to construct a data packet for sending
  **/
@@ -121,7 +123,7 @@ class Router
             /** @brief the port the next hop router is receiving on **/
             uint16_t port_dest = 0;
 
-            uint8_t directCost = 0xF0;
+            uint8_t directCost = infty;
 
             uint16_t port_direct = 0;
         };
