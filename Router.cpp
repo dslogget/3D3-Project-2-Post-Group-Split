@@ -97,7 +97,7 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
     routingTable.push_back(routTmp);
     std::cout << "Initialising Socket" << std::endl;
 
-    socket = new UDPSocket(domain.c_str(), std::to_string(port).c_str(), 5);
+    socket = new UDPSocket(domain.c_str(), std::to_string(port).c_str(), 1);
 
     std::cout << "Sending initial vectors" << std::endl;
 
@@ -188,14 +188,14 @@ void Router::handleTimeouts(){
 //        std::cout << (*iter).port << " " << std::difftime(curr, (*iter).lastHeardFrom) << std::endl;
 //        iostream_mutex.unlock();
 
-        if(std::difftime(curr, timeouts.at(i).lastHeardFrom) >= 15){
+        if(std::difftime(curr, timeouts.at(i).lastHeardFrom) >= 10){
             std::cout << timeouts.at(i).id << " is dead" << std::endl;
             for(auto& entry : routingTable){
                 if(entry.destination == timeouts.at(i).id || entry.via == timeouts.at(i).id){
-                    entry.cost = 0xF0;
+                    entry.cost = infty;
                 }
                 if(entry.destination == timeouts.at(i).id){
-                    entry.directCost = 0xF0;
+                    entry.directCost = infty;
                 }
             }
             printRoutingTable();
@@ -261,7 +261,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data)
                 if(!routing){
                     RoutingEntry tmp;
                     tmp.destination = dataID;
-                    tmp.cost = 0xF0;
+                    tmp.cost = infty;
                     tmp.port_dest = *originPort;
                     tmp.via = originID;
                     routingTable.push_back(tmp);
@@ -286,13 +286,10 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data)
                     routing->port_dest = *originPort;
                     std::cout << "Improvement via " << routing->via << std::endl;
                     printRoutingTable();
-
-
-
-                }else if(dataCost + origin->cost > routing->cost){
+                }else if(dataCost + origin->cost > routing->cost && dataCost < infty){
                     if(routing->via == originID){
                         std::cout << "But wait, it gets worse!" << std::endl;
-                        routing->cost = 0xF0;
+                        routing->cost = infty;
                         printRoutingTable();
                     }
 
