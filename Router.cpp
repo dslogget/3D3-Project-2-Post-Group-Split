@@ -64,6 +64,7 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
     std::cout << "\e]0;"<<id<<'\a';
     clearScreen(1);
     lastPrinted = std::time(0);
+    lastPrinted_in_log = std::time(0);
 
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t, uint8_t>> filevec;
 
@@ -237,14 +238,43 @@ void Router::handleTimeouts() {
 
 }
 
-void logToFile(std::vector<uint8_t> distanceVector){
-    //Print the distance vector that caused the change, the origin ID of that distance vector
-    //A timestamp, and the final routing table to the log
+void Router::logToFile(std::vector<uint8_t> distanceVector){
+    //Print the distance vector that caused the change,
+    //the origin ID of that distance vector
+    //A timestamp, and the
+    //final routing table to the log
+    
+    
+    std::ofstream myLogFile;
+    myLogFile.open ("logfile.log");
+    
+    
+    myLogFile << std::left << std::setw(6)
+    << "Destination ID: " << (uint16_t*)&distanceVector.at(8) << "|" << std::setw(9)
+    << "Origin ID: " << distanceVector.at(10) << "|" << std::setw(9)
+    << "Cost: " << distanceVector.at(11) << "|" << std::setw(9)
+    << "Timestamp: " << lastPrinted_in_log << "|" << std::setw(9)
+    << std::endl;
+    
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
+
     
     
     
+    //store routing table
+    lastPrinted = std::time(0);
+    myLogFile << std::left << std::setw(6) << "origin" << "|" << std::setw(6) << "dest" << "|" << std::setw(9)
+    << "port dest" << "|" << std::setw(4) << "cost" << "|" << std::endl;
+    
+    myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
+    
+    for(auto& iter : routingTable) {
+        myLogFile << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
+        << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << std::endl;
+    }
     
     
+    myLogFile.close();
     
 }
 

@@ -185,7 +185,7 @@ private:
 
 
     std::time_t lastPrinted;
-
+    std::time_t lastPrinted_in_log;
 
 
     /** @brief a vector containing routing entries **/
