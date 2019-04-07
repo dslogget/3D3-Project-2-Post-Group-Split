@@ -10,6 +10,8 @@
 
 #define infty 128
 
+
+
 /**
  *  @brief  This class makes it easier to construct a data packet for sending
  **/
@@ -58,6 +60,9 @@ public:
     /** @var    the destination IP for the tramission */
     uint32_t* ip;
 };
+
+void clearScreen(uint8_t mode = 0);
+
 
 
 
@@ -172,6 +177,9 @@ private:
 
 
     void removeRouter(uint8_t id);
+
+
+    std::time_t lastPrinted;
 
 
 
