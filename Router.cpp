@@ -237,6 +237,16 @@ void Router::handleTimeouts() {
 
 }
 
+void logToFile(std::vector<uint8_t> distanceVector){
+    //Print the distance vector that caused the change, the origin ID of that distance vector
+    //A timestamp, and the final routing table to the log
+    
+    
+    
+    
+    
+    
+}
 
 void Router::updateDistanceVector(std::vector<uint8_t>& data) {
     //We need to update our distance vector

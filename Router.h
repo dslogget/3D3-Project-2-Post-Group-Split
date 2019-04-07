@@ -152,6 +152,8 @@ private:
     void handleSocket();//James
 
     void handleTimeouts();
+    
+    void logToFile(std::vector<uint8_t> distanceVector);
 
     /**
      *  @brief  The function to handle updates to the distance vector/routing table
