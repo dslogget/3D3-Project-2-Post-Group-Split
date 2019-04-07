@@ -190,14 +190,7 @@ void Router::handleTimeouts(){
 
         if(std::difftime(curr, timeouts.at(i).lastHeardFrom) >= 10){
             std::cout << timeouts.at(i).id << " is dead" << std::endl;
-            for(auto& entry : routingTable){
-                if(entry.destination == timeouts.at(i).id || entry.via == timeouts.at(i).id){
-                    entry.cost = infty;
-                }
-                if(entry.destination == timeouts.at(i).id){
-                    entry.directCost = infty;
-                }
-            }
+            removeRouter(timeouts.at(i).id);
             printRoutingTable();
             timeouts.erase(timeouts.begin() + i);
             i--;
@@ -242,93 +235,98 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data)
 
 
 
+        if(data.at(0) == 4){
+            removeRouter(data.at(12));
+        }else{
 
-        for(auto iter = data.begin() + 8 + 2; iter != data.end(); iter += 2){
+            for(auto iter = data.begin() + 8 + 2; iter != data.end(); iter += 2){
 
-            uint8_t& dataID = *iter;
-            uint8_t& dataCost = *(iter + 1);
+                uint8_t& dataID = *iter;
+                uint8_t& dataCost = *(iter + 1);
 
-            if(dataID != id){
-                RoutingEntry* routing = 0;
-                RoutingEntry* origin = 0;
-                for(auto& entry : routingTable){
-                    if(entry.destination == dataID){
-                        routing = &entry;
-                        break;
+                if(dataID != id){
+                    RoutingEntry* routing = 0;
+                    RoutingEntry* origin = 0;
+                    for(auto& entry : routingTable){
+                        if(entry.destination == dataID){
+                            routing = &entry;
+                            break;
+                        }
                     }
-                }
 
-                if(!routing){
-                    RoutingEntry tmp;
-                    tmp.destination = dataID;
-                    tmp.cost = infty;
-                    tmp.port_dest = *originPort;
-                    tmp.via = originID;
-                    routingTable.push_back(tmp);
-                    routing = &routingTable.back();
+                    if(!routing){
+                        RoutingEntry tmp;
+                        tmp.destination = dataID;
+                        tmp.cost = infty;
+                        tmp.port_dest = *originPort;
+                        tmp.via = originID;
+                        routingTable.push_back(tmp);
+                        routing = &routingTable.back();
 
-                    std::cout << "New Node " << tmp.destination << std::endl;
-                    printRoutingTable();
-                }
-
-                for(auto& entry : routingTable){
-                    if(entry.destination == originID){
-                        origin = &entry;
-                        break;
-                    }
-                }
-
-
-
-                if(dataCost + origin->cost < routing->cost){
-                    routing->cost = dataCost + origin->cost;
-                    routing->via = originID;
-                    routing->port_dest = *originPort;
-                    std::cout << "Improvement via " << routing->via << std::endl;
-                    printRoutingTable();
-                }else if(dataCost + origin->cost > routing->cost && dataCost < infty){
-                    if(routing->via == originID){
-                        std::cout << "But wait, it gets worse!" << std::endl;
-                        routing->cost = infty;
+                        std::cout << "New Node " << tmp.destination << std::endl;
                         printRoutingTable();
                     }
 
-                }
-
-
-
-
-
-
-            }else if(data.at(0) > 1){
-                RoutingEntry* origin = 0;
-                for(auto& entry : routingTable){
-                    if(entry.destination == originID){
-                        origin = &entry;
-                        break;
+                    for(auto& entry : routingTable){
+                        if(entry.destination == originID){
+                            origin = &entry;
+                            break;
+                        }
                     }
-                }
-                if(origin){
-                    origin->directCost = dataCost;
-                    origin->port_direct = *originPort;
 
-                    if(data.at(0) == 2){
-                        std::vector<uint8_t> message(6);
-                        uint16_t* portptr = (uint16_t*)&message.at(0);
-                        *portptr = port;
-                        message.at(2) = id;
-                        message.at(3) = 0;
-                        message.at(4) = originID;
-                        message.at(5) = dataCost;
-                        Packet pkt(message);
-                        *pkt.dest_port = *originPort;
-                        *pkt.id = originID;
-                        *pkt.type = 3;
-                        socket->Send(pkt.getStoredVector(), domain.c_str(), *pkt.dest_port);
+
+
+                    if(dataCost + origin->cost < routing->cost){
+                        routing->cost = dataCost + origin->cost;
+                        routing->via = originID;
+                        routing->port_dest = *originPort;
+                        std::cout << "Improvement via " << routing->via << std::endl;
+                        printRoutingTable();
+                    }else if(dataCost + origin->cost > routing->cost && dataCost < infty){
+                        if(routing->via == originID){
+                            std::cout << "But wait, it gets worse!" << std::endl;
+                            routing->cost = infty;
+                            printRoutingTable();
+                        }
+
                     }
-                }
 
+
+
+
+
+
+                }else if(data.at(0) > 1){
+                    RoutingEntry* origin = 0;
+                    for(auto& entry : routingTable){
+                        if(entry.destination == originID){
+                            origin = &entry;
+                            break;
+                        }
+                    }
+                    if(origin){
+                        origin->directCost = dataCost;
+                        origin->port_direct = *originPort;
+
+                        if(data.at(0) == 2){
+                            std::vector<uint8_t> message(6);
+                            uint16_t* portptr = (uint16_t*)&message.at(0);
+                            *portptr = port;
+                            message.at(2) = id;
+                            message.at(3) = 0;
+                            message.at(4) = originID;
+                            message.at(5) = dataCost;
+                            Packet pkt(message);
+                            *pkt.dest_port = *originPort;
+                            *pkt.id = originID;
+                            *pkt.type = 3;
+                            socket->Send(pkt.getStoredVector(), domain.c_str(), *pkt.dest_port);
+                        }
+                    }
+
+                }
             }
+
         }
         for(auto& entry : routingTable){
             if(entry.cost > entry.directCost){
@@ -384,3 +382,43 @@ void Router::forwardDataPacket(std::vector<uint8_t>& data)
         std::cout << &data.at(8) << std::endl;
     }
 }
+
+
+void Router::removeRouter(uint8_t del_id){
+    bool erased = false;
+    for(unsigned int i = 0; i < routingTable.size(); i++){
+            if(routingTable.at(i).destination == del_id){
+                routingTable.erase(routingTable.begin() + i);
+                i--;
+                erased = true;
+            }else if(routingTable.at(i).via == del_id){
+                routingTable.at(i).cost = infty;
+            }
+    }
+    if(erased){
+        std::vector<uint8_t> message(2);
+        uint16_t* portptr = (uint16_t*)&message.at(0);
+        *portptr = port;
+
+        message.push_back(id);
+        message.push_back(0);
+
+        message.push_back(del_id);
+        message.push_back(infty);
+
+
+        Packet pkt(message);
+        for(auto& entry : routingTable){
+            if(entry.destination != id && entry.port_direct != 0){
+                *pkt.dest_port = entry.port_direct;
+                *pkt.id = entry.via;
+                *pkt.type = 4;
+                socket->Send(pkt.getStoredVector(), domain.c_str(), *pkt.dest_port);
+            }
+        }
+    }
+
+
+}
+
+

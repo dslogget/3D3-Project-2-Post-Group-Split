@@ -8,7 +8,7 @@
 #include <ctime>
 //For delays apparently std::this_thread::sleep_for(std::chrono::milliseconds(x)); should work
 
-#define infty 20
+#define infty 128
 
 /**
  *  @brief  This class makes it easier to construct a data packet for sending
@@ -170,6 +170,11 @@ class Router
         *   @brief  The function to forward a data packet along the correct routing path based on the routing table
         **/
         void forwardDataPacket(std::vector<uint8_t>& data);//James
+
+
+
+        void removeRouter(uint8_t id);
+
 
 
         /** @brief a vector containing routing entries **/
