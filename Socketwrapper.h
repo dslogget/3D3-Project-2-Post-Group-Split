@@ -20,7 +20,7 @@
  *  It allows the user to initialise the socket with any valid port and domain
  **/
 
-class UDPSocket{
+class UDPSocket {
 public:
     /**
      *  @class
