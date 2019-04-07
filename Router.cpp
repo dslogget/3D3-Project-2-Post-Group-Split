@@ -1,5 +1,16 @@
 #include "Router.h"
 
+void clearScreen(uint8_t mode){
+    std::cout << "\e[2J";
+    if(mode){
+        std::cout << "\e[3J";
+    }
+
+    std::cout << "\e[;H\e[97m";
+    std::cout.flush();
+}
+
+
 
 Packet::Packet(const std::vector<uint8_t>& data, int option)
     : stored_data(8, 0) {
@@ -48,6 +59,11 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
     //Initialise id
     //allocate new socket
     //initialise sockets and call their socket handler
+
+
+    std::cout << "\e]0;"<<id<<'\a';
+    clearScreen(1);
+    lastPrinted = std::time(0);
 
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t, uint8_t>> filevec;
 
@@ -144,6 +160,7 @@ Router::~Router() {
 
 
 void Router::printRoutingTable() {
+    lastPrinted = std::time(0);
     for(auto& iter : routingTable) {
         std::cout << iter.destination << std::endl;
         std::cout << (uint16_t)iter.cost << std::endl;
@@ -174,6 +191,13 @@ void Router::handleSocket() {
             lastPushed = currtime;
             handleTimeouts();
         }
+        if(difftime(currtime, lastPrinted) >= 7){
+            clearScreen();
+            std::cout << "\e[96mRouting Table settled" << std::endl;
+            printRoutingTable();
+            std::cout << "\e[0m";
+            std::cout.flush();
+        }
 
     }
 }
@@ -187,6 +211,7 @@ void Router::handleTimeouts() {
 //        iostream_mutex.unlock();
 
         if(std::difftime(curr, timeouts.at(i).lastHeardFrom) >= 10) {
+            clearScreen();
             std::cout << "\e[31m" << timeouts.at(i).id << " is dead" << std::endl;
             removeRouter(timeouts.at(i).id);
             printRoutingTable();
@@ -235,6 +260,11 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
 
         if(data.at(0) == 4) {
             removeRouter(data.at(12));
+            clearScreen();
+            std::cout << "\e[31m" << data.at(12) << " has reportedly died" << std::endl;
+            printRoutingTable();
+            std::cout << "\e[0m";
+
         } else {
 
             for(auto iter = data.begin() + 8 + 2; iter != data.end(); iter += 2) {
@@ -261,6 +291,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                         routingTable.push_back(tmp);
                         routing = &routingTable.back();
 
+                        clearScreen();
                         std::cout << "\e[32mNew Node " << tmp.destination << std::endl;
                         printRoutingTable();
                         std::cout << "\e[0m";
@@ -279,11 +310,13 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                         routing->cost = dataCost + origin->cost;
                         routing->via = originID;
                         routing->port_dest = *originPort;
+                        clearScreen();
                         std::cout << "\e[32m" << "Improvement via " << routing->via << std::endl;
                         printRoutingTable();
                         std::cout << "\e[0m";
                     } else if(dataCost + origin->cost > routing->cost && dataCost < infty) {
                         if(routing->via == originID) {
+                            clearScreen();
                             std::cout << "\e[31m" << "But wait, it gets worse!" << std::endl;
                             routing->cost = infty;
                             printRoutingTable();
@@ -334,6 +367,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                 entry.port_dest = entry.port_direct;
                 entry.via = entry.destination;
                 entry.cost = entry.directCost;
+                clearScreen();
                 std::cout << "\e[33mUsing direct link" << std::endl;
                 printRoutingTable();
                 std::cout << "\e[0m";
