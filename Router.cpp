@@ -158,15 +158,17 @@ Router::~Router() {
 
 void Router::printRoutingTable() {
     lastPrinted = std::time(0);
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl;
     std::cout << std::left << std::setw(6) << "origin" << "|" << std::setw(6) << "dest" << "|" << std::setw(9)
     << "port dest" << "|" << std::setw(4) << "cost" << "|" << std::endl;
 
-    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl;
 
     for(auto& iter : routingTable) {
         std::cout << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
         << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << std::endl;
     }
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl;
 }
 
 
@@ -272,6 +274,19 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector){
     //the origin ID of that distance vector
     //A timestamp, and the
     //final routing table to the log
+
+//    For assessment purposes each routing process should print the routing table to an output file, but only when
+//    there has been a change in the routing table. If an arriving DV advertisement causes a change in the routing
+//    table, then you should print out the timestamp, the routing table before the change, the DV that caused the
+//    change (including the neighbor it came from), and the new routing table. If an arriving DV does not cause a
+//    change in the routing table, then you do not need to print anything (though while you’re debugging, you may
+//    wish to print out the routing table for each arriving DV). In the code that you hand in you should only print
+//    a routing table for those DV’s that cause a change in the routing table.
+
+
+
+
+
     lastPrinted_in_log = std::time(0);
 
     std::ofstream myLogFile;
@@ -302,6 +317,7 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector){
         myLogFile << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
         << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << "\r" << std::endl;
     }
+    myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
 
 
     myLogFile.close();
