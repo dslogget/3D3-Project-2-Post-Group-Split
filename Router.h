@@ -153,6 +153,8 @@ private:
 
     void handleTimeouts();
 
+    void logToFile(const std::vector<uint8_t>& distanceVector);
+
     /**
      *  @brief  The function to handle updates to the distance vector/routing table
      *
@@ -183,6 +185,7 @@ private:
 
 
     std::time_t lastPrinted;
+    std::time_t lastPrinted_in_log;
 
 
 
