@@ -243,39 +243,42 @@ void Router::logToFile(std::vector<uint8_t> distanceVector){
     //the origin ID of that distance vector
     //A timestamp, and the
     //final routing table to the log
-    
-    
+
+
     std::ofstream myLogFile;
-    myLogFile.open ("logfile.log");
-    
-    
+    std::string path;
+    path += "logfile-";
+    path += id;
+    path += ".log"
+    myLogFile.open(path, std::ios::app);
+
+
     myLogFile << std::left << std::setw(6)
     << "Destination ID: " << (uint16_t*)&distanceVector.at(8) << "|" << std::setw(9)
     << "Origin ID: " << distanceVector.at(10) << "|" << std::setw(9)
     << "Cost: " << distanceVector.at(11) << "|" << std::setw(9)
     << "Timestamp: " << lastPrinted_in_log << "|" << std::setw(9)
     << std::endl;
-    
+
     std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
 
-    
-    
-    
+
+
+
     //store routing table
-    lastPrinted = std::time(0);
     myLogFile << std::left << std::setw(6) << "origin" << "|" << std::setw(6) << "dest" << "|" << std::setw(9)
     << "port dest" << "|" << std::setw(4) << "cost" << "|" << std::endl;
-    
+
     myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
-    
+
     for(auto& iter : routingTable) {
         myLogFile << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
         << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << std::endl;
     }
-    
-    
+
+
     myLogFile.close();
-    
+
 }
 
 void Router::updateDistanceVector(std::vector<uint8_t>& data) {
