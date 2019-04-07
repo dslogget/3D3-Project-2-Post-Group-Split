@@ -206,11 +206,25 @@ void Router::handleSocket() {
 
 void Router::handleTimeouts() {
     std::time_t curr = std::time(0);
+    std::vector<uint8_t> message(2);
+
+    message.push_back(id);
+    message.push_back(0);
+    message.push_back(0);
+    message.push_back(infty);
+
+
+
+
+
+
     for(unsigned int i = 0; i < timeouts.size(); i++) {
 
 //        iostream_mutex.lock();
 //        std::cout << (*iter).port << " " << std::difftime(curr, (*iter).lastHeardFrom) << std::endl;
 //        iostream_mutex.unlock();
+
+
 
         if(std::difftime(curr, timeouts.at(i).lastHeardFrom) >= 10) {
             clearScreen();
@@ -218,6 +232,14 @@ void Router::handleTimeouts() {
             removeRouter(timeouts.at(i).id);
             printRoutingTable();
             std::cout << "\e[0m";
+
+            message.at(4) = timeouts.at(i).id;
+            Packet pkt(message);
+            *pkt.dest_port = port;
+            *pkt.id = id;
+            *pkt.type = 4;
+
+            logToFile(pkt.getStoredVector());
             timeouts.erase(timeouts.begin() + i);
             i--;
         }
@@ -228,6 +250,12 @@ void Router::handleTimeouts() {
         if(entry.cost >= infty){
             if(difftime(curr, entry.timeInfty) >= 9){
                 removeRouter(entry.destination);
+                message.at(4) = entry.destination;
+                Packet pkt(message);
+                *pkt.dest_port = port;
+                *pkt.id = id;
+                *pkt.type = 4;
+                logToFile(pkt.getStoredVector());
                 i--;
             }
         }else{
@@ -236,44 +264,43 @@ void Router::handleTimeouts() {
 
     }
 
+
 }
 
-void Router::logToFile(std::vector<uint8_t> distanceVector){
+void Router::logToFile(const std::vector<uint8_t>& distanceVector){
     //Print the distance vector that caused the change,
     //the origin ID of that distance vector
     //A timestamp, and the
     //final routing table to the log
-
+    lastPrinted_in_log = std::time(0);
 
     std::ofstream myLogFile;
     std::string path;
     path += "logfile-";
     path += id;
-    path += ".log"
+    path += ".log";
     myLogFile.open(path, std::ios::app);
 
-
-    myLogFile << std::left << std::setw(6)
-    << "Destination ID: " << (uint16_t*)&distanceVector.at(8) << "|" << std::setw(9)
-    << "Origin ID: " << distanceVector.at(10) << "|" << std::setw(9)
-    << "Cost: " << distanceVector.at(11) << "|" << std::setw(9)
-    << "Timestamp: " << lastPrinted_in_log << "|" << std::setw(9)
-    << std::endl;
-
-    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
-
-
-
+    if(distanceVector.at(0) != 4){
+        myLogFile // was this meant to be here? << "Destination ID: " << (uint16_t*)&distanceVector.at(8) << "\r\n"
+        << "Origin ID: " << distanceVector.at(10) << "\r\n"
+        << "Cost: " << (uint16_t)distanceVector.at(11) << "\r\n"
+        << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
+    }else{
+        myLogFile << "Router " << distanceVector.at(12) << "died" << "\r" << std::endl;
+        myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+    }
 
     //store routing table
     myLogFile << std::left << std::setw(6) << "origin" << "|" << std::setw(6) << "dest" << "|" << std::setw(9)
-    << "port dest" << "|" << std::setw(4) << "cost" << "|" << std::endl;
+    << "port dest" << "|" << std::setw(4) << "cost" << "|" << "\r" <<std::endl;
 
-    myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
+    myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
 
     for(auto& iter : routingTable) {
         myLogFile << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
-        << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << std::endl;
+        << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << "\r" << std::endl;
     }
 
 
@@ -291,7 +318,9 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
     //total size of at least 12
     //std::cout << "Distance Vector Rec" << std::endl;
 
+
     if(data.size() >= 12 && !(data.size() % 2)) {
+        uint8_t routingTable_updated = 0;
         uint16_t* originPort;
         originPort = (uint16_t*)&data.at(8);
         uint8_t& originID = data.at(10);
@@ -322,6 +351,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
             std::cout << "\e[31m" << data.at(12) << " has reportedly died" << std::endl;
             printRoutingTable();
             std::cout << "\e[0m";
+            routingTable_updated = 1;
 
         } else {
 
@@ -353,6 +383,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                         std::cout << "\e[32mNew Node " << tmp.destination << std::endl;
                         printRoutingTable();
                         std::cout << "\e[0m";
+                        routingTable_updated = 1;
                     }
 
                     for(auto& entry : routingTable) {
@@ -372,6 +403,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                         std::cout << "\e[32m" << "Improvement via " << routing->via << std::endl;
                         printRoutingTable();
                         std::cout << "\e[0m";
+                        routingTable_updated = 1;
                     } else if(dataCost + origin->cost > routing->cost && dataCost < infty) {
                         if(routing->via == originID) {
                             clearScreen();
@@ -379,6 +411,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                             routing->cost = infty;
                             printRoutingTable();
                             std::cout << "\e[0m";
+                            routingTable_updated = 1;
                         }
 
                     }
@@ -415,6 +448,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                             socket->Send(pkt.getStoredVector(), domain.c_str(), *pkt.dest_port);
                         }
                     }
+                    routingTable_updated = 1;
 
                 }
             }
@@ -431,10 +465,13 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                 std::cout << "\e[33mUsing direct link" << std::endl;
                 printRoutingTable();
                 std::cout << "\e[0m";
+                routingTable_updated = 1;
             }
         }
 
-
+        if(routingTable_updated){
+            logToFile(data);
+        }
 
 
     }

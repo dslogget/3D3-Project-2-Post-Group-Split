@@ -152,8 +152,8 @@ private:
     void handleSocket();//James
 
     void handleTimeouts();
-    
-    void logToFile(std::vector<uint8_t> distanceVector);
+
+    void logToFile(const std::vector<uint8_t>& distanceVector);
 
     /**
      *  @brief  The function to handle updates to the distance vector/routing table
@@ -186,6 +186,7 @@ private:
 
     std::time_t lastPrinted;
     std::time_t lastPrinted_in_log;
+
 
 
     /** @brief a vector containing routing entries **/
