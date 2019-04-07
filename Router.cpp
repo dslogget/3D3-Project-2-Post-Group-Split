@@ -225,7 +225,7 @@ void Router::handleTimeouts() {
     for(unsigned int i = 0; i < routingTable.size(); i++) {
         auto& entry = routingTable.at(i);
         if(entry.cost >= infty){
-            if(difftime(curr, entry.timeInfty) >= 6){
+            if(difftime(curr, entry.timeInfty) >= 9){
                 removeRouter(entry.destination);
                 i--;
             }
