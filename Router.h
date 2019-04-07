@@ -2,6 +2,7 @@
 #define ROUTER_H
 
 #include "Socketwrapper.h"
+#include <iomanip>
 #include <thread>
 #include <mutex>
 #include <chrono>
@@ -129,6 +130,8 @@ private:
         uint8_t directCost = infty;
 
         uint16_t port_direct = 0;
+
+        std::time_t timeInfty;
     };
 
     struct Timeout {

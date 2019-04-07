@@ -136,11 +136,7 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
 
 
     std::cout << std::endl << "\e[36mInitial Table: " << std::endl;
-    for(auto& iter : routingTable) {
-        std::cout << iter.destination << std::endl;
-        std::cout << (uint16_t)iter.cost << std::endl;
-        std::cout << iter.port_dest << std::endl;
-    }
+    printRoutingTable();
     std::cout << "\e[0m";
 
     file.close();
@@ -161,10 +157,14 @@ Router::~Router() {
 
 void Router::printRoutingTable() {
     lastPrinted = std::time(0);
+    std::cout << std::left << std::setw(6) << "origin" << "|" << std::setw(6) << "dest" << "|" << std::setw(9)
+    << "port dest" << "|" << std::setw(4) << "cost" << "|" << std::endl;
+
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
+
     for(auto& iter : routingTable) {
-        std::cout << iter.destination << std::endl;
-        std::cout << (uint16_t)iter.cost << std::endl;
-        std::cout << iter.port_dest << std::endl;
+        std::cout << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
+        << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << std::endl;
     }
 }
 
@@ -178,12 +178,13 @@ void Router::handleSocket() {
     while(1) {
         std::vector<uint8_t> data = socket->Receive();
         std::time_t currtime = std::time(0);
-        if(data.size() != 0) {
+        while(data.size() != 0) {
             if(data.at(0) == 0) {
                 forwardDataPacket(data);
             } else {
                 updateDistanceVector(data);
             }
+            data = socket->Receive();
         }
 
         if(difftime(currtime, lastPushed) >= 5) {
@@ -221,6 +222,18 @@ void Router::handleTimeouts() {
         }
     }
 
+    for(unsigned int i = 0; i < routingTable.size(); i++) {
+        auto& entry = routingTable.at(i);
+        if(entry.cost >= infty){
+            if(difftime(curr, entry.timeInfty) >= 6){
+                removeRouter(entry.destination);
+                i--;
+            }
+        }else{
+            entry.timeInfty = curr;
+        }
+
+    }
 
 }
 
@@ -240,10 +253,12 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
         originPort = (uint16_t*)&data.at(8);
         uint8_t& originID = data.at(10);
 
+        std::time_t curr_time = std::time(0);
+
         Timeout* tm = 0;
         for(auto& entry : timeouts) {
             if(entry.id == originID) {
-                entry.lastHeardFrom = std::time(0);
+                entry.lastHeardFrom = curr_time;
                 tm = &entry;
                 break;
             }
@@ -362,7 +377,9 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
             }
 
         }
-        for(auto& entry : routingTable) {
+
+        for(unsigned int i = 0; i < routingTable.size(); i++) {
+            auto& entry = routingTable.at(i);
             if(entry.cost > entry.directCost) {
                 entry.port_dest = entry.port_direct;
                 entry.via = entry.destination;
@@ -373,6 +390,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                 std::cout << "\e[0m";
             }
         }
+
 
 
 
