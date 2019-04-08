@@ -282,6 +282,10 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector) {
 //    change in the routing table, then you do not need to print anything (though while you’re debugging, you may
 //    wish to print out the routing table for each arriving DV). In the code that you hand in you should only print
 //    a routing table for those DV’s that cause a change in the routing table.
+    
+    //until sixe()
+    // ID: | A | B |
+    //costs| 0 | 5 | 10
 
 
 
@@ -297,11 +301,30 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector) {
     myLogFile.open(path, std::ios::app);
 
     if(distanceVector.at(0) != 4) {
-        myLogFile // was this meant to be here? << "Destination ID: " << (uint16_t*)&distanceVector.at(8) << "\r\n"
+        myLogFile
                 << "Origin ID: " << distanceVector.at(10) << "\r\n"
                 << "Cost: " << (uint16_t)distanceVector.at(11) << "\r\n"
                 << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
-        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
+        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl;
+        
+        
+        //store distance vector
+        myLogFile << "ID:  |" << std::setw(7);
+        
+        for(int i=10; i<distanceVector.size(); i+=2){
+            myLogFile << distanceVector.at(i) << std::setw(4) << "|" << std::setw(4);
+        }
+        myLogFile << "\r\n" << std::setw(5);
+        myLogFile << "Cost:  |" << std::setw(5);
+        
+        for(int i=11; i<distanceVector.size(); i+=2){
+            myLogFile << distanceVector.at(i) << std::setw(4) << "|" << std::setw(4);
+        }
+        myLogFile << "\r\n" << std::setw(5);
+        
+        
+        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl;
+            
     } else {
         myLogFile << "Router " << distanceVector.at(12) << "died" << "\r" << std::endl;
         myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
