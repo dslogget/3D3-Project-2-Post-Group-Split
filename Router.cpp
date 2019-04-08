@@ -60,6 +60,12 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
     //allocate new socket
     //initialise sockets and call their socket handler
 
+    std::string path;
+    path += "logfile-";
+    path += id;
+    path += ".log";
+    myLogFile.open(path, std::ios::app);
+
 
     std::cout << "\e]0;" << id << '\a';
     clearScreen(1);
@@ -151,7 +157,7 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
 
 Router::~Router() {
     delete socket;
-
+    myLogFile.close();
 }
 
 
@@ -282,44 +288,41 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector) {
 //    change in the routing table, then you do not need to print anything (though while you’re debugging, you may
 //    wish to print out the routing table for each arriving DV). In the code that you hand in you should only print
 //    a routing table for those DV’s that cause a change in the routing table.
-    
+
 
 
 
     lastPrinted_in_log = std::time(0);
 
-    std::ofstream myLogFile;
-    std::string path;
-    path += "logfile-";
-    path += id;
-    path += ".log";
-    myLogFile.open(path, std::ios::app);
-
     if(distanceVector.at(0) != 4) {
         myLogFile
-                << "Origin ID: " << distanceVector.at(10) << "\r\n"
-                << "Cost: " << (uint16_t)distanceVector.at(11) << "\r\n"
+                << "\r\nOrigin ID: " << distanceVector.at(10) << "\r\n"
                 << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
-        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl;
-        
-        
+
+        uint8_t fillwidth = (distanceVector.size() - 10)/2;
+        fillwidth *= 4;
+        fillwidth += 9;
+        myLogFile << std::setfill('-') <<  std::left << std::setw(fillwidth) << "-" << std::setfill(' ') << "\r" << std::endl;
+
+
         //store distance vector
-        myLogFile << "ID:  |" << std::setw(7);
-        
-        for(int i=10; i<distanceVector.size(); i+=2){
-            myLogFile << distanceVector.at(i) << std::setw(4) << "|" << std::setw(4);
+        myLogFile << "ID:    |";
+
+        for(unsigned int i=10; i<distanceVector.size(); i+=2){
+            myLogFile << std::setw(4) << distanceVector.at(i)  << "|";
         }
-        myLogFile << "\r\n" << std::setw(5);
+        myLogFile << "\r\n";
         myLogFile << "Cost:  |" << std::setw(5);
-        
-        for(int i=11; i<distanceVector.size(); i+=2){
-            myLogFile << distanceVector.at(i) << std::setw(4) << "|" << std::setw(4);
+
+        for(unsigned int i=11; i<distanceVector.size(); i+=2){
+            myLogFile << std::setw(4) << (uint16_t)distanceVector.at(i) << "|";
         }
         myLogFile << "\r\n" << std::setw(5);
-        
-        
-        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl;
-            
+
+
+        myLogFile << std::setfill('-') << std::setw(fillwidth) << "-" << std::setfill(' ') << "\r\n\r" << std::endl;
+        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
+
     } else {
         myLogFile << "Router " << distanceVector.at(12) << "died" << "\r" << std::endl;
         myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
@@ -336,9 +339,6 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector) {
                   << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << "\r" << std::endl;
     }
     myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
-
-
-    myLogFile.close();
 
 }
 
@@ -538,12 +538,19 @@ void Router::forwardDataPacket(std::vector<uint8_t>& data) {
     if(data.at(1) != id) {
         for(unsigned int i = 0; i < routingTable.size(); i++) {
             if(routingTable.at(i).destination == data.at(1)) {
+                lastPrinted_in_log = std::time(0);
+                myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+                myLogFile << "Forwarding to " << routingTable.at(i).via << "\r" << std::endl;
                 std::cout << "Forwarding to " << routingTable.at(i).via << std::endl;
                 socket->Send(data, domain.c_str(), routingTable.at(i).port_dest);
                 break;
             }
         }
     } else {
+        lastPrinted_in_log = std::time(0);
+        myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+        myLogFile << "Data received" << "\r" << std::endl;
+        myLogFile << &data.at(8) << "\r" << std::endl;
         std::cout << "Data received" << std::endl;
         std::cout << &data.at(8) << std::endl;
     }
