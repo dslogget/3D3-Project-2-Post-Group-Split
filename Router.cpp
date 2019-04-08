@@ -283,11 +283,6 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector) {
 //    wish to print out the routing table for each arriving DV). In the code that you hand in you should only print
 //    a routing table for those DV’s that cause a change in the routing table.
     
-    //until sixe()
-    // ID: | A | B |
-    //costs| 0 | 5 | 10
-
-
 
 
 
