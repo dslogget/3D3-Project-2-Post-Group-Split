@@ -11,9 +11,9 @@ int main(int argc, char** arg)
     Packet packet(message);
     *packet.type = 0;
     *packet.id = arg[3][0];
-    std::cout << (uint16_t)packet.getStoredVector().at(0) << std::endl;
-    std::cout << (uint16_t)*packet.type << std::endl;
     UDPSocket sock(ip, arg[1]);
     sock.Send(packet.getStoredVector(), ip, arg[2]);
+
+    std::cout << "\e[32mPacket Sent!\e[0m" << std::endl;
     return 0;
 }
