@@ -518,7 +518,8 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
         //check if the initial link is better for all paths. if so use it.
         for(unsigned int i = 0; i < routingTable.size(); i++) {
             auto& entry = routingTable.at(i);
-            if(entry.cost > entry.directCost) {
+            //Prioritise lowest hop count
+            if(entry.cost > entry.directCost && (entry.via != entry.destination || data.at(0) > 1)) {
                 entry.port_dest = entry.port_direct;
                 entry.via = entry.destination;
                 entry.cost = entry.directCost;
