@@ -355,23 +355,33 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
     //std::cout << "Distance Vector Rec" << std::endl;
 
 
+    //Check to see if the datapacket is of min length (And divisible by 2 to prevent Seg Faults)
     if(data.size() >= 12 && !(data.size() % 2)) {
+
+        //Keep track of if routing table changes
         uint8_t routingTable_updated = 0;
+        //The port the data came from
         uint16_t* originPort;
         originPort = (uint16_t*)&data.at(8);
+
+        //The id the data came from
         uint8_t& originID = data.at(10);
 
+        //current time for timeout updates
         std::time_t curr_time = std::time(0);
 
+        //ptr to see if the timeout is found
         Timeout* tm = 0;
         for(auto& entry : timeouts) {
             if(entry.id == originID) {
+                //if exists update last heard from
                 entry.lastHeardFrom = curr_time;
                 tm = &entry;
                 break;
             }
         }
 
+        //otherwise add a new timeout
         if(!tm) {
             Timeout newTm;
             newTm.id = originID;
@@ -380,8 +390,9 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
         }
 
 
-
+        //if a router died
         if(data.at(0) == 4) {
+            //remove from table
             removeRouter(data.at(12));
             clearScreen();
             std::cout << "\e[31m" << data.at(12) << " has reportedly died" << std::endl;
@@ -390,13 +401,15 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
             routingTable_updated = 1;
 
         } else {
-
+            //otherwise begin to check for updates
             for(auto iter = data.begin() + 8 + 2; iter != data.end(); iter += 2) {
 
-                uint8_t& dataID = *iter;
-                uint8_t& dataCost = *(iter + 1);
+                uint8_t& dataID = *iter; //Id the data is referencing
+                uint8_t& dataCost = *(iter + 1); //cost of the path to id
 
+                //if this id isn't us
                 if(dataID != id) {
+                    //find the destination and origin in the routing table
                     RoutingEntry* routing = 0;
                     RoutingEntry* origin = 0;
                     for(auto& entry : routingTable) {
@@ -405,8 +418,9 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                             break;
                         }
                     }
-
+                    //if not not in routign table
                     if(!routing) {
+                        //add it
                         RoutingEntry tmp;
                         tmp.destination = dataID;
                         tmp.cost = infty;
@@ -430,8 +444,9 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                     }
 
 
-
+                    //if the cost is lower
                     if(dataCost + origin->cost < routing->cost) {
+                        //update to use route
                         routing->cost = dataCost + origin->cost;
                         routing->via = originID;
                         routing->port_dest = *originPort;
@@ -441,7 +456,10 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                         std::cout << "\e[0m";
                         routingTable_updated = 1;
                     } else if(dataCost + origin->cost > routing->cost && dataCost < infty) {
+                        //if it's higher
                         if(routing->via == originID) {
+                            //and the current route to this note is through the origin (the DV), then set the cost
+                            //to infinity to advoid coutn to infinity
                             clearScreen();
                             std::cout << "\e[31m" << "But wait, it gets worse!" << std::endl;
                             routing->cost = infty;
@@ -458,6 +476,9 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
 
 
                 } else if(data.at(0) > 1) {
+                    //if the entry is referencing us
+                    //and the type is 2 or 3
+                    //find origin in routing table
                     RoutingEntry* origin = 0;
                     for(auto& entry : routingTable) {
                         if(entry.destination == originID) {
@@ -465,10 +486,13 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                             break;
                         }
                     }
+                    //if it exists, and it always should
                     if(origin) {
+                        //set the costs to the new connection param
                         origin->directCost = dataCost;
                         origin->port_direct = *originPort;
 
+                        //if the type is 2, handshake with 3 back to confirm connection
                         if(data.at(0) == 2) {
                             std::vector<uint8_t> message(6);
                             uint16_t* portptr = (uint16_t*)&message.at(0);
@@ -491,6 +515,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
 
         }
 
+        //check if the initial link is better for all paths. if so use it.
         for(unsigned int i = 0; i < routingTable.size(); i++) {
             auto& entry = routingTable.at(i);
             if(entry.cost > entry.directCost) {
@@ -505,6 +530,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
             }
         }
 
+        //if there was an update, print to logs.
         if(routingTable_updated) {
             logToFile(data);
         }
@@ -570,6 +596,7 @@ void Router::removeRouter(uint8_t del_id) {
             routingTable.at(i).cost = infty;
         }
     }
+
     if(erased) {
         std::vector<uint8_t> message(2);
         uint16_t* portptr = (uint16_t*)&message.at(0);
