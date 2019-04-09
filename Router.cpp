@@ -255,8 +255,10 @@ void Router::handleTimeouts() {
 
     for(unsigned int i = 0; i < routingTable.size(); i++) {
         auto& entry = routingTable.at(i);
-        if(entry.cost >= infty) {
-            if(difftime(curr, entry.timeInfty) >= 9) {
+
+        if(entry.cost >= infty){
+            if(difftime(curr, entry.timeInfty) >= 15){
+
                 removeRouter(entry.destination);
                 message.at(4) = entry.destination;
                 Packet pkt(message);
@@ -285,9 +287,9 @@ void Router::logToFile(const std::vector<uint8_t>& distanceVector) {
 //    there has been a change in the routing table. If an arriving DV advertisement causes a change in the routing
 //    table, then you should print out the timestamp, the routing table before the change, the DV that caused the
 //    change (including the neighbor it came from), and the new routing table. If an arriving DV does not cause a
-//    change in the routing table, then you do not need to print anything (though while you’re debugging, you may
+//    change in the routing table, then you do not need to print anything (though while you?re debugging, you may
 //    wish to print out the routing table for each arriving DV). In the code that you hand in you should only print
-//    a routing table for those DV’s that cause a change in the routing table.
+//    a routing table for those DV?s that cause a change in the routing table.
 
 
 
