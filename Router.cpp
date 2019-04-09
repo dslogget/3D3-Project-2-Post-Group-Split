@@ -1,8 +1,8 @@
 #include "Router.h"
 
-void clearScreen(uint8_t mode){
+void clearScreen(uint8_t mode) {
     std::cout << "\e[2J";
-    if(mode){
+    if(mode) {
         std::cout << "\e[3J";
     }
 
@@ -60,10 +60,17 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
     //allocate new socket
     //initialise sockets and call their socket handler
 
+    std::string path;
+    path += "logfile-";
+    path += id;
+    path += ".log";
+    myLogFile.open(path, std::ios::app);
 
-    std::cout << "\e]0;"<<id<<'\a';
+
+    std::cout << "\e]0;" << id << '\a';
     clearScreen(1);
     lastPrinted = std::time(0);
+    lastPrinted_in_log = std::time(0);
 
     std::vector<std::tuple<uint8_t, uint8_t, uint16_t, uint8_t>> filevec;
 
@@ -150,22 +157,24 @@ Router::Router(std::string domain, uint8_t id, std::string initpath)
 
 Router::~Router() {
     delete socket;
-
+    myLogFile.close();
 }
 
 
 
 void Router::printRoutingTable() {
     lastPrinted = std::time(0);
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl;
     std::cout << std::left << std::setw(6) << "origin" << "|" << std::setw(6) << "dest" << "|" << std::setw(9)
-    << "port dest" << "|" << std::setw(4) << "cost" << "|" << std::endl;
+              << "port dest" << "|" << std::setw(4) << "cost" << "|" << std::endl;
 
-    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl ;
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl;
 
     for(auto& iter : routingTable) {
         std::cout << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
-        << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << std::endl;
+                  << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << std::endl;
     }
+    std::cout << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << std::endl;
 }
 
 
@@ -192,7 +201,7 @@ void Router::handleSocket() {
             lastPushed = currtime;
             handleTimeouts();
         }
-        if(difftime(currtime, lastPrinted) >= 7){
+        if(difftime(currtime, lastPrinted) >= 7) {
             clearScreen();
             std::cout << "\e[96mRouting Table settled" << std::endl;
             printRoutingTable();
@@ -205,11 +214,25 @@ void Router::handleSocket() {
 
 void Router::handleTimeouts() {
     std::time_t curr = std::time(0);
+    std::vector<uint8_t> message(2);
+
+    message.push_back(id);
+    message.push_back(0);
+    message.push_back(0);
+    message.push_back(infty);
+
+
+
+
+
+
     for(unsigned int i = 0; i < timeouts.size(); i++) {
 
 //        iostream_mutex.lock();
 //        std::cout << (*iter).port << " " << std::difftime(curr, (*iter).lastHeardFrom) << std::endl;
 //        iostream_mutex.unlock();
+
+
 
         if(std::difftime(curr, timeouts.at(i).lastHeardFrom) >= 10) {
             clearScreen();
@@ -217,6 +240,14 @@ void Router::handleTimeouts() {
             removeRouter(timeouts.at(i).id);
             printRoutingTable();
             std::cout << "\e[0m";
+
+            message.at(4) = timeouts.at(i).id;
+            Packet pkt(message);
+            *pkt.dest_port = port;
+            *pkt.id = id;
+            *pkt.type = 4;
+
+            logToFile(pkt.getStoredVector());
             timeouts.erase(timeouts.begin() + i);
             i--;
         }
@@ -224,19 +255,94 @@ void Router::handleTimeouts() {
 
     for(unsigned int i = 0; i < routingTable.size(); i++) {
         auto& entry = routingTable.at(i);
+
         if(entry.cost >= infty){
             if(difftime(curr, entry.timeInfty) >= 15){
+
                 removeRouter(entry.destination);
+                message.at(4) = entry.destination;
+                Packet pkt(message);
+                *pkt.dest_port = port;
+                *pkt.id = id;
+                *pkt.type = 4;
+                logToFile(pkt.getStoredVector());
                 i--;
             }
-        }else{
+        } else {
             entry.timeInfty = curr;
         }
 
     }
 
+
 }
 
+void Router::logToFile(const std::vector<uint8_t>& distanceVector) {
+    //Print the distance vector that caused the change,
+    //the origin ID of that distance vector
+    //A timestamp, and the
+    //final routing table to the log
+
+//    For assessment purposes each routing process should print the routing table to an output file, but only when
+//    there has been a change in the routing table. If an arriving DV advertisement causes a change in the routing
+//    table, then you should print out the timestamp, the routing table before the change, the DV that caused the
+//    change (including the neighbor it came from), and the new routing table. If an arriving DV does not cause a
+//    change in the routing table, then you do not need to print anything (though while you?re debugging, you may
+//    wish to print out the routing table for each arriving DV). In the code that you hand in you should only print
+//    a routing table for those DV?s that cause a change in the routing table.
+
+
+
+
+    lastPrinted_in_log = std::time(0);
+
+    if(distanceVector.at(0) != 4) {
+        myLogFile
+                << "\r\nOrigin ID: " << distanceVector.at(10) << "\r\n"
+                << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+
+        uint8_t fillwidth = (distanceVector.size() - 10)/2;
+        fillwidth *= 4;
+        fillwidth += 9;
+        myLogFile << std::setfill('-') <<  std::left << std::setw(fillwidth) << "-" << std::setfill(' ') << "\r" << std::endl;
+
+
+        //store distance vector
+        myLogFile << "ID:    |";
+
+        for(unsigned int i=10; i<distanceVector.size(); i+=2){
+            myLogFile << std::setw(4) << distanceVector.at(i)  << "|";
+        }
+        myLogFile << "\r\n";
+        myLogFile << "Cost:  |" << std::setw(5);
+
+        for(unsigned int i=11; i<distanceVector.size(); i+=2){
+            myLogFile << std::setw(4) << (uint16_t)distanceVector.at(i) << "|";
+        }
+        myLogFile << "\r\n" << std::setw(5);
+
+
+        myLogFile << std::setfill('-') << std::setw(fillwidth) << "-" << std::setfill(' ') << "\r\n\r" << std::endl;
+        myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
+
+    } else {
+        myLogFile << "Router " << distanceVector.at(12) << "died" << "\r" << std::endl;
+        myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+    }
+
+    //store routing table
+    myLogFile << std::left << std::setw(6) << "origin" << "|" << std::setw(6) << "dest" << "|" << std::setw(9)
+              << "port dest" << "|" << std::setw(4) << "cost" << "|" << "\r" << std::endl;
+
+    myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
+
+    for(auto& iter : routingTable) {
+        myLogFile << std::setw(6) << id << "|" << std::setw(6) << iter.destination << "|" << std::setw(9)
+                  << iter.port_dest << "|" << std::setw(4) << (uint16_t)iter.cost << "|" << "\r" << std::endl;
+    }
+    myLogFile << std::setfill('-') << std::setw(29) << "-" << std::setfill(' ') << "\r" << std::endl ;
+
+}
 
 void Router::updateDistanceVector(std::vector<uint8_t>& data) {
     //We need to update our distance vector
@@ -248,7 +354,9 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
     //total size of at least 12
     //std::cout << "Distance Vector Rec" << std::endl;
 
+
     if(data.size() >= 12 && !(data.size() % 2)) {
+        uint8_t routingTable_updated = 0;
         uint16_t* originPort;
         originPort = (uint16_t*)&data.at(8);
         uint8_t& originID = data.at(10);
@@ -279,6 +387,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
             std::cout << "\e[31m" << data.at(12) << " has reportedly died" << std::endl;
             printRoutingTable();
             std::cout << "\e[0m";
+            routingTable_updated = 1;
 
         } else {
 
@@ -310,6 +419,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                         std::cout << "\e[32mNew Node " << tmp.destination << std::endl;
                         printRoutingTable();
                         std::cout << "\e[0m";
+                        routingTable_updated = 1;
                     }
 
                     for(auto& entry : routingTable) {
@@ -329,6 +439,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                         std::cout << "\e[32m" << "Improvement via " << routing->via << std::endl;
                         printRoutingTable();
                         std::cout << "\e[0m";
+                        routingTable_updated = 1;
                     } else if(dataCost + origin->cost > routing->cost && dataCost < infty) {
                         if(routing->via == originID) {
                             clearScreen();
@@ -336,6 +447,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                             routing->cost = infty;
                             printRoutingTable();
                             std::cout << "\e[0m";
+                            routingTable_updated = 1;
                         }
 
                     }
@@ -372,6 +484,7 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                             socket->Send(pkt.getStoredVector(), domain.c_str(), *pkt.dest_port);
                         }
                     }
+                    routingTable_updated = 1;
 
                 }
             }
@@ -388,10 +501,13 @@ void Router::updateDistanceVector(std::vector<uint8_t>& data) {
                 std::cout << "\e[33mUsing direct link" << std::endl;
                 printRoutingTable();
                 std::cout << "\e[0m";
+                routingTable_updated = 1;
             }
         }
 
-
+        if(routingTable_updated) {
+            logToFile(data);
+        }
 
 
     }
@@ -424,12 +540,19 @@ void Router::forwardDataPacket(std::vector<uint8_t>& data) {
     if(data.at(1) != id) {
         for(unsigned int i = 0; i < routingTable.size(); i++) {
             if(routingTable.at(i).destination == data.at(1)) {
+                lastPrinted_in_log = std::time(0);
+                myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+                myLogFile << "Forwarding to " << routingTable.at(i).via << "\r" << std::endl;
                 std::cout << "Forwarding to " << routingTable.at(i).via << std::endl;
                 socket->Send(data, domain.c_str(), routingTable.at(i).port_dest);
                 break;
             }
         }
     } else {
+        lastPrinted_in_log = std::time(0);
+        myLogFile << "Timestamp: " << std::asctime(std::localtime(&lastPrinted_in_log)) << "\r" << std::endl;
+        myLogFile << "Data received" << "\r" << std::endl;
+        myLogFile << &data.at(8) << "\r" << std::endl;
         std::cout << "Data received" << std::endl;
         std::cout << &data.at(8) << std::endl;
     }
