@@ -1,0 +1,7 @@
+<map id="Router::removeRouter" name="Router::removeRouter">
+<area shape="rect" id="node1" title=" " alt="" coords="599,31,745,57"/>
+<area shape="rect" id="node2" href="$class_router.html#af23a0ec401813ca79756426fd6c7d711" title=" " alt="" coords="373,5,532,32"/>
+<area shape="rect" id="node5" href="$class_router.html#a56375599efcf1081152244797a8930c7" title="The function to handle updates to the distance vector/routing table." alt="" coords="355,56,551,83"/>
+<area shape="rect" id="node3" href="$class_router.html#a569bcc6b72377a8f6e08fda7a99406bc" title="The function to handle the incoming data packets." alt="" coords="160,31,307,57"/>
+<area shape="rect" id="node4" href="$class_router.html#a2b87555cc342f96a4912d04352861ff1" title=" " alt="" coords="5,31,112,57"/>
+</map>
