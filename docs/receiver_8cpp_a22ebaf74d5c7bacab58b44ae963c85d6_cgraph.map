@@ -1,0 +1,6 @@
+<map id="main" name="main">
+<area shape="rect" id="node1" title=" " alt="" coords="5,56,56,83"/>
+<area shape="rect" id="node2" href="$class_u_d_p_socket.html#a89077ae94bd7a47a2893734c72dd16b8" title="this function returns the raw vector of data received by the socket." alt="" coords="127,5,269,32"/>
+<area shape="rect" id="node3" href="$class_u_d_p_socket.html#a2a5ff0686715f69612664b4580e1b63d" title="this function send a raw vector of data through the socket." alt="" coords="134,56,262,83"/>
+<area shape="rect" id="node4" href="$class_u_d_p_socket.html#ad8c91ba73261fc52497b681b0cf35b13" title="Gets the info of the last message received on the socket." alt="" coords="104,107,292,133"/>
+</map>

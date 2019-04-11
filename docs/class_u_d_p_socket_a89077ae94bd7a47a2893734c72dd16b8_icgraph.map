@@ -1,0 +1,6 @@
+<map id="UDPSocket::Receive" name="UDPSocket::Receive">
+<area shape="rect" id="node1" title="this function returns the raw vector of data received by the socket." alt="" coords="355,31,497,57"/>
+<area shape="rect" id="node2" href="$receiver_8cpp.html#a22ebaf74d5c7bacab58b44ae963c85d6" title=" " alt="" coords="208,5,259,32"/>
+<area shape="rect" id="node3" href="$class_router.html#a569bcc6b72377a8f6e08fda7a99406bc" title="The function to handle the incoming data packets." alt="" coords="160,56,307,83"/>
+<area shape="rect" id="node4" href="$class_router.html#a2b87555cc342f96a4912d04352861ff1" title=" " alt="" coords="5,56,112,83"/>
+</map>
