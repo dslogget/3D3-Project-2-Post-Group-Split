@@ -2,3 +2,5 @@
 * text=auto
 
 *.sh text eol=lf
+
+docs/* linguist-documentation
