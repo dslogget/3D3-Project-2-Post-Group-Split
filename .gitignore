@@ -38,6 +38,7 @@
 Vagrantfile
 *.bat
 .vagrant/*
+tarball/*
 
 *.save-failed
 *.ppk
